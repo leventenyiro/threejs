@@ -28,37 +28,42 @@ insideWorker((event: any) => {
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
     scene.add(sun);
 
-    // Earth
-    const earthGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-    const earthMaterial = new THREE.MeshPhongMaterial({ color: 0x6b93d6 });
-    const earth = new THREE.Mesh(earthGeometry, earthMaterial);
-    scene.add(earth);
+    if (event.data.textureBitmap) {
+      const texture = new THREE.Texture(event.data.textureBitmap);
+      texture.needsUpdate = true;
 
-    const earthOrbitRadius = 8; // A Föld pályájának sugara
-    let earthAngle = 0; // A Föld szöghelyzete
+      const earthGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+      const earthMaterial = new THREE.MeshPhongMaterial({
+        map: texture
+      });
+      const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+      scene.add(earth);
 
-    function animate() {
-      // Spotlight animáció
-      const spotLightAngle = Date.now() * 0.0005;
-      spotLight.position.x = Math.sin(spotLightAngle) * spotLightRadius;
-      spotLight.position.z = Math.cos(spotLightAngle) * spotLightRadius;
+      const earthOrbitRadius = 8;
+      let earthAngle = 0;
 
-      // Föld pozíció frissítése a pályán
-      earthAngle += 0.01; // A Föld körüli mozgás sebessége
-      earth.position.x = Math.sin(earthAngle) * earthOrbitRadius;
-      earth.position.z = Math.cos(earthAngle) * earthOrbitRadius;
+      function animate() {
+        const spotLightAngle = Date.now() * 0.0005;
+        spotLight.position.x = Math.sin(spotLightAngle) * spotLightRadius;
+        spotLight.position.z = Math.cos(spotLightAngle) * spotLightRadius;
 
-      renderer.render(scene, camera);
-      requestAnimationFrame(animate);
+        // Update Earth's position on its orbit
+        earthAngle += 0.01; // Earth's orbital speed
+        earth.position.x = Math.sin(earthAngle) * earthOrbitRadius;
+        earth.position.z = Math.cos(earthAngle) * earthOrbitRadius;
+
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+
+      animate();
     }
-
-    animate();
 
     self.onmessage = function (event) {
       if (event.data.type === 'mousemove') {
         const mouseX = (event.data.mouseX / canvas.width) * 2 - 1;
         const mouseY = -(event.data.mouseY / canvas.height) * 2 + 1;
-        
+
         camera.position.x = mouseX * 10;
         camera.position.y = mouseY * 10;
         camera.position.z = 15;
@@ -68,3 +73,4 @@ insideWorker((event: any) => {
     };
   }
 });
+
